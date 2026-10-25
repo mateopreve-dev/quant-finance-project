@@ -21,17 +21,20 @@ def sample_covariance(stock_returns, factors=None):
     return stock_returns.cov().values * TRADING_DAYS
 
 
-def factor_covariance(stock_returns, factors):
+def factor_regression(stock_returns, factors):
     common = stock_returns.index.intersection(factors.index)
     Y = stock_returns.loc[common].values - factors.loc[common, ["RF"]].values
     F = factors.loc[common, FACTOR_NAMES].values
     X = np.column_stack([np.ones(len(common)), F])
 
     coeffs, *_ = np.linalg.lstsq(X, Y, rcond=None)
-    B = coeffs[1:].T
     resid = Y - X @ coeffs
-    resid_var = (resid ** 2).sum(axis=0) / (len(common) - X.shape[1])
+    return coeffs[1:].T, F, resid, Y
 
+
+def factor_covariance(stock_returns, factors):
+    B, F, resid, _ = factor_regression(stock_returns, factors)
+    resid_var = (resid ** 2).sum(axis=0) / (resid.shape[0] - B.shape[1] - 1)
     factor_cov = np.cov(F, rowvar=False)
     return (B @ factor_cov @ B.T + np.diag(resid_var)) * TRADING_DAYS
 
@@ -151,6 +154,17 @@ def main():
 
     weights = pd.DataFrame({"Sample": w_sample, "Factor": w_factor}, index=TICKERS)
     weights.to_csv(OUTPUT_TABLES_DIR / "part3_full_sample_weights.csv")
+
+    _, _, resid, Y = factor_regression(stock_returns, factors)
+    r_squared = pd.Series(1 - resid.var(axis=0) / Y.var(axis=0), index=TICKERS)
+    resid_corr = pd.DataFrame(np.corrcoef(resid, rowvar=False), index=TICKERS, columns=TICKERS)
+    upper = np.triu(np.ones((n, n), dtype=bool), k=1)
+    top_pairs = (resid_corr.where(upper).stack().sort_values(ascending=False)
+                 .head(10).rename("Residual Correlation"))
+    print(f"\nAverage factor-model R²: {r_squared.mean():.2f}")
+    print("Largest residual correlations\n", top_pairs.round(2))
+    r_squared.rename("R2").to_csv(OUTPUT_TABLES_DIR / "part3_factor_r_squared.csv")
+    top_pairs.to_csv(OUTPUT_TABLES_DIR / "part3_residual_correlations.csv")
 
     start = first_month_start(stock_returns.index, BURN_IN_DAYS)
     specs = {
