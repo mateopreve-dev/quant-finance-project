@@ -24,6 +24,7 @@ python part1a_portfolios.py        # Project 1, Part A: VW vs EW portfolios
 python part1b_diversification.py   # Project 1, Part B: diversification experiment
 python part2_frontier.py           # Project 2: tangency, MVP, and the frontier
 python part3_factor_covariance.py  # Project 3: sample vs. factor-based covariance, full-sample & OOS
+python part4_momentum_bl.py        # Project 4: momentum views in a Black-Litterman portfolio
 ```
 
 `part1a_portfolios.py` downloads and caches the 30-stock + benchmark + risk-free

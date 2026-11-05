@@ -3,3 +3,5 @@ numpy
 matplotlib
 yfinance
 pandas-datareader
+scipy
+scikit-learn
