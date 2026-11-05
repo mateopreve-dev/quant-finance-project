@@ -60,8 +60,6 @@ def momentum_view(scores):
 def black_litterman(sigma, w_mkt, P, Q, confidence=CONFIDENCE):
     gamma = MARKET_SHARPE / np.sqrt(w_mkt @ sigma @ w_mkt)
     pi = gamma * sigma @ w_mkt
-    if P is None:
-        return pi, gamma
     omega = P @ (TAU * sigma) @ P.T / confidence
     ts = TAU * sigma
     mu = pi + ts @ P.T @ np.linalg.solve(P @ ts @ P.T + omega, Q - P @ pi)
@@ -172,7 +170,7 @@ def stats(daily, rf, turnover, excess=True):
 def active_stats(daily, bench):
     active = daily - bench.reindex(daily.index)
     te = active.std(ddof=1) * np.sqrt(TRADING_DAYS)
-    return te, active.mean() * TRADING_DAYS / te if te > 1e-6 else np.nan
+    return te, active.mean() * TRADING_DAYS / te
 
 
 def main():
@@ -184,8 +182,6 @@ def main():
     rf = returns_all[RISK_FREE_TICKER]
 
     dates = rebalance_dates(returns.index, max(LOOKBACK + 1, COV_WINDOW))
-    start = returns.index[dates[0]]
-    print(f"Backtest: {start.date()} to {returns.index[-1].date()}, {len(dates)} monthly rebalances")
 
     cache = {}
 
@@ -197,10 +193,10 @@ def main():
             cache[i] = (sigma, w_mkt, P, Q)
         return cache[i]
 
-    def bl_target(confidence=CONFIDENCE, with_views=True):
+    def bl_target(confidence=CONFIDENCE):
         def target(i):
             sigma, w_mkt, P, Q = inputs(i)
-            mu, gamma = black_litterman(sigma, w_mkt, P if with_views else None, Q, confidence)
+            mu, gamma = black_litterman(sigma, w_mkt, P, Q, confidence)
             return optimize(mu, sigma, gamma, w_mkt)
         return target
 
@@ -210,8 +206,6 @@ def main():
     results = {}
     bl_gross, bl_net, bl_to, bl_weights = backtest(returns, bl_target(), dates)
     results["BL momentum"] = (bl_net, bl_to)
-    _, prior_net, prior_to, _ = backtest(returns, bl_target(with_views=False), dates)
-    results["BL prior, no views"] = (prior_net, prior_to)
     _, cap_net, cap_to, _ = backtest(returns, cap_target, dates)
     results["Market-cap benchmark"] = (cap_net, cap_to)
     _, ls_net, ls_to, ls_legs = long_short_backtest(returns, prices, dates)
@@ -219,10 +213,9 @@ def main():
     perf = {label: stats(ret, rf, to) for label, (ret, to) in results.items()}
     perf["Naive momentum (top-bottom decile)"] = stats(ls_net, rf, ls_to, excess=False)
     perf = pd.DataFrame(perf)
-    for label in ["BL momentum", "BL prior, no views"]:
-        te, ir = active_stats(results[label][0], cap_net)
-        perf.loc["Tracking Error vs Cap", label] = te
-        perf.loc["Information Ratio vs Cap", label] = ir
+    te, ir = active_stats(bl_net, cap_net)
+    perf.loc["Tracking Error vs Cap", "BL momentum"] = te
+    perf.loc["Information Ratio vs Cap", "BL momentum"] = ir
     perf.loc["Gross Annualized Return", "BL momentum"] = (1 + bl_gross).prod() ** (TRADING_DAYS / len(bl_gross)) - 1
     print("\nPerformance, net of 10 bp per side\n", perf.round(4))
     perf.to_csv(OUTPUT_TABLES_DIR / "part4_performance.csv")
@@ -262,13 +255,11 @@ def main():
         tilt.append({
             "date": returns.index[i],
             "Winners": active.iloc[k][order[-GROUP_SIZE:]].sum(),
-            "Middle": active.iloc[k][order[GROUP_SIZE:-GROUP_SIZE]].sum(),
             "Losers": active.iloc[k][order[:GROUP_SIZE]].sum(),
         })
     tilt = pd.DataFrame(tilt).set_index("date")
     print("\nAverage active weight by momentum group\n", tilt.mean().round(4))
     tilt.to_csv(OUTPUT_TABLES_DIR / "part4_active_tilt.csv")
-    bl_weights.to_csv(OUTPUT_TABLES_DIR / "part4_bl_weights.csv")
 
     fig, ax = plt.subplots(figsize=(11, 5))
     ax.plot((1 + bl_net).cumprod(), color="black", label="BL momentum")
@@ -289,8 +280,6 @@ def main():
     ax.legend(frameon=False)
     fig.tight_layout()
     fig.savefig(OUTPUT_FIGURES_DIR / "part4_active_tilt.png", dpi=200)
-
-    plt.show()
 
 
 if __name__ == "__main__":
