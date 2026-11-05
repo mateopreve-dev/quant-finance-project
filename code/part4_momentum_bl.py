@@ -121,6 +121,7 @@ def long_short_backtest(returns, prices, dates_idx, cost=COST_PER_SIDE):
     n_days = len(returns)
     gross = np.full(n_days, np.nan)
     net = np.full(n_days, np.nan)
+    legs = np.full((n_days, 2), np.nan)
     rebal = set(dates_idx)
     long_w = short_w = None
     turnover = []
@@ -141,11 +142,14 @@ def long_short_backtest(returns, prices, dates_idx, cost=COST_PER_SIDE):
         short_ret = short_w @ R[i]
         gross[i] = long_ret - short_ret
         net[i] = gross[i] - trade_cost
+        legs[i] = long_ret, short_ret
         long_w = long_w * (1 + R[i]) / (1 + long_ret)
         short_w = short_w * (1 + R[i]) / (1 + short_ret)
 
     index = returns.index
-    return pd.Series(gross, index=index).dropna(), pd.Series(net, index=index).dropna(), pd.Series(turnover)
+    legs = pd.DataFrame(legs, index=index, columns=["Winners", "Losers"]).dropna()
+    return (pd.Series(gross, index=index).dropna(), pd.Series(net, index=index).dropna(),
+            pd.Series(turnover), legs)
 
 
 def max_drawdown(daily):
@@ -210,7 +214,7 @@ def main():
     results["BL prior, no views"] = (prior_net, prior_to)
     _, cap_net, cap_to, _ = backtest(returns, cap_target, dates)
     results["Market-cap benchmark"] = (cap_net, cap_to)
-    _, ls_net, ls_to = long_short_backtest(returns, prices, dates)
+    _, ls_net, ls_to, ls_legs = long_short_backtest(returns, prices, dates)
 
     perf = {label: stats(ret, rf, to) for label, (ret, to) in results.items()}
     perf["Naive momentum (top-bottom decile)"] = stats(ls_net, rf, ls_to, excess=False)
@@ -222,6 +226,22 @@ def main():
     perf.loc["Gross Annualized Return", "BL momentum"] = (1 + bl_gross).prod() ** (TRADING_DAYS / len(bl_gross)) - 1
     print("\nPerformance, net of 10 bp per side\n", perf.round(4))
     perf.to_csv(OUTPUT_TABLES_DIR / "part4_performance.csv")
+
+    yearly = pd.DataFrame({
+        "BL momentum": (1 + bl_net).groupby(bl_net.index.year).prod() - 1,
+        "Market-cap benchmark": (1 + cap_net).groupby(cap_net.index.year).prod() - 1,
+    })
+    yearly["Difference"] = yearly["BL momentum"] - yearly["Market-cap benchmark"]
+    print("\nCalendar-year returns\n", yearly.round(4))
+    yearly.to_csv(OUTPUT_TABLES_DIR / "part4_yearly_returns.csv")
+
+    leg_means = ls_legs.mean() * TRADING_DAYS
+    print("\nNaive momentum legs, average annual return\n", leg_means.round(4))
+    leg_means.rename("Average annual return").to_csv(OUTPUT_TABLES_DIR / "part4_naive_legs.csv")
+    monthly = (1 + ls_net).groupby([ls_net.index.year, ls_net.index.month]).prod() - 1
+    worst = monthly.nsmallest(5).rename("Naive momentum monthly return")
+    print("\nWorst months for naive momentum\n", worst.round(4))
+    worst.to_csv(OUTPUT_TABLES_DIR / "part4_naive_worst_months.csv")
 
     sens = {}
     for c in [0.25, 1.0, 4.0]:
