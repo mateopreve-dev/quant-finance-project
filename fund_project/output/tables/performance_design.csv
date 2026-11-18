@@ -1,0 +1,13 @@
+,A. Momentum,B. Crash-protected,C. Copper-confirmed BL,Theme index,S&P 500
+Annualized return,0.1245,0.0998,0.1087,0.1186,0.1163
+Annualized volatility,0.2075,0.1893,0.1976,0.1948,0.1903
+Sharpe ratio,0.6266,0.5506,0.5764,0.6275,0.6272
+t-stat of Sharpe,1.6565,1.4555,1.5238,1.6589,1.6581
+Sortino ratio,0.8921,0.7758,0.8176,0.8903,0.8668
+Daily VaR 95%,0.0176,0.0154,0.0169,0.0167,0.0185
+Daily ES 95%,0.0304,0.0277,0.0292,0.0285,0.0299
+Maximum drawdown,-0.3711,-0.3711,-0.3631,-0.3772,-0.3372
+Annualized turnover,2.4559,2.4974,2.169,0.0851,
+Tracking error,0.0745,0.0772,0.0462,,
+Information ratio,0.1045,-0.2331,-0.1804,,
+t-stat of IR,0.2761,-0.6163,-0.4768,,
