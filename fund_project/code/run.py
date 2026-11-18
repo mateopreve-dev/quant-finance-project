@@ -206,6 +206,20 @@ def main(mode):
     save(pd.DataFrame(coefs), "spanning_loadings_full")
     save(pd.DataFrame(tstats), "spanning_tstats_full")
 
+    score = {}
+    for seg, perf in {"Design": design, "Holdout": holdout, "Full": full}.items():
+        theme = perf[NAMES["Theme"]]
+        for k in ["A", "B", "C"]:
+            x = perf[NAMES[k]]
+            score[(seg, NAMES[k])] = {
+                "Information ratio": x["Information ratio"],
+                "Positive information ratio": x["Information ratio"] > 0,
+                "Sharpe ratio": x["Sharpe ratio"],
+                "Theme Sharpe ratio": theme["Sharpe ratio"],
+                "Sharpe at least theme": x["Sharpe ratio"] >= theme["Sharpe ratio"],
+            }
+    save(pd.DataFrame(score).T.infer_objects().rename_axis(["Sample", "Strategy"]), "success_criteria")
+
     group = res["universe"]["Group"]
     tilt = {}
     for seg, (a, b) in {"Design": (FIRST_TRADE, DESIGN_END), "Holdout": (HOLDOUT_START, LAST_DAY)}.items():

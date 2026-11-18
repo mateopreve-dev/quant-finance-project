@@ -1,0 +1,10 @@
+Sample,Strategy,Information ratio,Positive information ratio,Sharpe ratio,Theme Sharpe ratio,Sharpe at least theme
+Design,A. Momentum,0.1045,True,0.6266,0.6275,False
+Design,B. Crash-protected,-0.2331,False,0.5506,0.6275,False
+Design,C. Copper-confirmed BL,-0.1804,False,0.5764,0.6275,False
+Holdout,A. Momentum,0.5104,True,0.7329,0.5878,True
+Holdout,B. Crash-protected,0.3647,True,0.7289,0.5878,True
+Holdout,C. Copper-confirmed BL,0.2464,True,0.6136,0.5878,True
+Full,A. Momentum,0.2418,True,0.6558,0.6147,True
+Full,B. Crash-protected,-0.0481,False,0.5985,0.6147,False
+Full,C. Copper-confirmed BL,-0.0024,False,0.5866,0.6147,False

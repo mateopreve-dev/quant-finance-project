@@ -20,7 +20,7 @@ GROUPS = {
     "Power": ["Electric Utilities", "Multi-Utilities",
               "Independent Power Producers & Energy Traders", "Renewable Electricity"],
     "Grid equipment": ["Electrical Components & Equipment", "Heavy Electrical Equipment"],
-    "Metals": ["Copper", "Steel", "Aluminum", "Diversified Metals & Mining"],
+    "Metals": ["Copper", "Steel"],
 }
 
 RISK_FREE = "BIL"
