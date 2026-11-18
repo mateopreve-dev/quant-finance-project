@@ -16,4 +16,4 @@ cd code
 python run.py
 ```
 
-`python run.py` reads `data/raw/` and rewrites `output/`. `python run.py design` reports the 2016-2022 design period only. To download the raw data again: `python -c "import data; data.download_all()"`.
+`python run.py` reads `data/raw/` and rewrites `output/`. `python run.py design` runs the 2016-2022 design period only, without opening the holdout. To download the raw data again: `python -c "import data; data.download_all()"`.

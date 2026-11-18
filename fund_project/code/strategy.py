@@ -77,8 +77,7 @@ def exposure_scale(wml, rebalances, dates):
             vols[dates[i]] = past.std(ddof=1) * np.sqrt(TRADING_DAYS)
     vols = pd.Series(vols)
     median = vols.expanding().median()
-    return pd.DataFrame({"momentum_vol": vols, "median_vol": median,
-                         "scale": np.minimum(1.0, median / vols)})
+    return pd.DataFrame({"momentum_vol": vols, "scale": np.minimum(1.0, median / vols)})
 
 
 def scaled_momentum_target(mkt, columns, scale):
@@ -166,7 +165,6 @@ def backtest(returns, target_fn, rebalances, cost=COST_PER_SIDE):
     stock = np.array([c != "CASH" for c in columns])
     R = np.nan_to_num(returns.values)
     n = len(returns)
-    gross = np.full(n, np.nan)
     net = np.full(n, np.nan)
     rebal = set(rebalances)
     w = None
@@ -186,8 +184,6 @@ def backtest(returns, target_fn, rebalances, cost=COST_PER_SIDE):
                 paid = cost * np.abs(new)[stock].sum()
             w = new
             held[returns.index[d]] = pd.Series(new, index=columns)
-        gross[d], net[d] = g, g - paid
+        net[d] = g - paid
     first = rebalances[0] + 1
-    return (pd.Series(net[first:], index=returns.index[first:]),
-            pd.Series(gross[first:], index=returns.index[first:]),
-            pd.Series(turnover), pd.DataFrame(held).T)
+    return pd.Series(net[first:], index=returns.index[first:]), pd.Series(turnover), pd.DataFrame(held).T

@@ -67,8 +67,7 @@ def newey_west_ols(y, X, lags=NEWEY_WEST_LAGS):
 def regress(r, factors, names):
     data = pd.concat([r.rename("r"), factors], axis=1, join="inner").dropna()
     y = (data["r"] - data["RF"]).values
-    beta, t, r2 = newey_west_ols(y, data[names].values)
-    return beta, t, r2
+    return newey_west_ols(y, data[names].values)
 
 
 def ladder(r, factors):
