@@ -3,8 +3,8 @@ import pandas as pd
 
 from config import (
     MEMBERSHIP_FILE, GICS_CURRENT_FILE, GICS_FORMER_FILE, PRICES_FILE, CLOSE_FILE,
-    SHARES_FILE, FACTORS_FILE, MISSING_FILE, GROUPS, RISK_FREE, MARKET, COPPER,
-    PRICE_START, PRICE_END, FIRST_TRADE, LAST_DAY, SHARES_LAG_DAYS,
+    SHARES_FILE, FACTORS_FILE, AQR_FILE, MISSING_FILE, GROUPS, RISK_FREE, MARKET, COPPER,
+    PRICE_START, PRICE_END, FIRST_TRADE, LAST_DAY, SHARES_LAG_DAYS, AQR_URL, AQR_FILES,
 )
 
 
@@ -142,21 +142,44 @@ def download_factors():
     return factors
 
 
+def _aqr_factor(name, file):
+    import io
+    import requests
+
+    raw = requests.get(AQR_URL.format(file), headers={"User-Agent": "Mozilla/5.0"}, timeout=600)
+    raw.raise_for_status()
+    sheets = pd.read_excel(io.BytesIO(raw.content), sheet_name=None, header=None)
+    table = sheets.get(f"{name} Factors", next(iter(sheets.values())))
+    top = table.index[table[0].astype(str).str.strip() == "DATE"][0]
+    data = table.iloc[top + 1:].set_axis(table.iloc[top].astype(str).str.strip(), axis=1)
+    series = pd.to_numeric(data.set_index("DATE")["USA"], errors="coerce")
+    series.index = pd.to_datetime(series.index)
+    return series.loc[FIRST_TRADE:LAST_DAY].dropna().rename(name)
+
+
+def download_aqr():
+    aqr = pd.concat([_aqr_factor(k, v) for k, v in AQR_FILES.items()], axis=1)
+    aqr.to_csv(AQR_FILE)
+    return aqr
+
+
 def download_all():
     tickers = candidates().index.tolist()
     total, _ = download_prices(tickers)
     have = [t for t in tickers if t in total.columns]
     download_shares(have, total.index)
     download_factors()
+    download_aqr()
 
 
 def load():
-    if not all(f.exists() for f in [PRICES_FILE, CLOSE_FILE, SHARES_FILE, FACTORS_FILE]):
+    if not all(f.exists() for f in [PRICES_FILE, CLOSE_FILE, SHARES_FILE, FACTORS_FILE, AQR_FILE]):
         download_all()
     total = pd.read_csv(PRICES_FILE, index_col=0, parse_dates=True)
     close = pd.read_csv(CLOSE_FILE, index_col=0, parse_dates=True)
     shares = pd.read_csv(SHARES_FILE, index_col=0, parse_dates=True)
     factors = pd.read_csv(FACTORS_FILE, index_col=0, parse_dates=True)
+    factors = factors.join(pd.read_csv(AQR_FILE, index_col=0, parse_dates=True))
     universe = candidates()
     universe = universe[universe.index.isin(total.columns)]
     return total, close, shares, factors, universe

@@ -8,6 +8,7 @@ LADDER = {
     "FF3": ["Mkt-RF", "SMB", "HML"],
     "FF5": ["Mkt-RF", "SMB", "HML", "RMW", "CMA"],
     "FF5 + Mom": ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "Mom"],
+    "FF5 + Mom + BAB + QMJ": ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "Mom", "BAB", "QMJ"],
 }
 
 
@@ -65,7 +66,7 @@ def newey_west_ols(y, X, lags=NEWEY_WEST_LAGS):
 
 
 def regress(r, factors, names):
-    data = pd.concat([r.rename("r"), factors], axis=1, join="inner").dropna()
+    data = pd.concat([r.rename("r"), factors], axis=1, join="inner").dropna(subset=["r", "RF"] + names)
     y = (data["r"] - data["RF"]).values
     return newey_west_ols(y, data[names].values)
 
@@ -79,7 +80,7 @@ def ladder(r, factors):
 
 
 def loadings(r, factors):
-    names = LADDER["FF5 + Mom"]
+    names = LADDER["FF5 + Mom + BAB + QMJ"]
     beta, t, r2 = regress(r, factors, names)
     coef = pd.Series(beta, index=["Alpha (annual)"] + names)
     coef["Alpha (annual)"] *= TRADING_DAYS

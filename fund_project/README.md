@@ -5,7 +5,7 @@ Mateo Preve, Geo Cauzza, Alvaro Grohmann Borsio
 - `FundProject_Report.docx`: report
 - `FundProject_Slides.pptx`: presentation (speaker notes included)
 - `code/`: strategy and evaluation code
-- `data/raw/`: all raw inputs
+- `data/raw/`: all raw inputs (S&P 500 membership and sectors, Yahoo prices and shares, Ken French factors, AQR BAB and QMJ factors)
 - `output/`: every table and figure used in the report and slides
 
 ## Reproduce

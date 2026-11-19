@@ -14,6 +14,7 @@ PRICES_FILE = RAW / "prices_total_return.csv"
 CLOSE_FILE = RAW / "prices_close.csv"
 SHARES_FILE = RAW / "shares_outstanding_history.csv"
 FACTORS_FILE = RAW / "ff5_momentum_daily.csv"
+AQR_FILE = RAW / "aqr_bab_qmj_daily.csv"
 MISSING_FILE = RAW / "tickers_without_data.csv"
 
 GROUPS = {
@@ -26,6 +27,8 @@ GROUPS = {
 RISK_FREE = "BIL"
 MARKET = "SPY"
 COPPER = "HG=F"
+AQR_URL = "https://www.aqr.com/-/media/AQR/Documents/Insights/Data-Sets/{}-Daily.xlsx"
+AQR_FILES = {"BAB": "Betting-Against-Beta-Equity-Factors", "QMJ": "Quality-Minus-Junk-Factors"}
 
 PRICE_START = "2013-01-01"
 PRICE_END = "2026-01-01"

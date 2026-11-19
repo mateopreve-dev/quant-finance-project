@@ -6,3 +6,5 @@ pandas-datareader
 setuptools
 scipy
 scikit-learn
+openpyxl
+requests

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from config import (
     TABLES, FIGURES, RISK_FREE, MARKET, COPPER, PRICE_START, FIRST_TRADE, DESIGN_END,
-    HOLDOUT_START, LAST_DAY, LOOKBACK, MAX_WEIGHT, VARIANTS_TRIED,
+    HOLDOUT_START, LAST_DAY, LOOKBACK, MAX_WEIGHT, VARIANTS_TRIED, TRADING_DAYS,
 )
 from data import load, membership_matrix
 from strategy import (
@@ -173,13 +173,17 @@ def main(mode):
             ladders[(NAMES[k], seg)] = ladder(res["series"][k].loc[a:b], res["factors"])
     save(pd.concat(ladders, names=["Strategy", "Sample", "Model"]), "attribution_ladder")
 
-    coefs, tstats = {}, {}
-    for k in ["A", "B", "C", "Theme"]:
-        c, t, r2 = loadings(res["series"][k], res["factors"])
-        c["R-squared"] = r2
-        coefs[NAMES[k]], tstats[NAMES[k]] = c, t
-    save(pd.DataFrame(coefs), "spanning_loadings_full")
-    save(pd.DataFrame(tstats), "spanning_tstats_full")
+    for seg, start in {"full": FIRST_TRADE, "holdout": HOLDOUT_START}.items():
+        coefs, tstats = {}, {}
+        for k in ["A", "B", "C", "Theme"]:
+            c, t, r2 = loadings(res["series"][k].loc[start:], res["factors"])
+            c["R-squared"] = r2
+            coefs[NAMES[k]], tstats[NAMES[k]] = c, t
+        save(pd.DataFrame(coefs), f"spanning_loadings_{seg}")
+        save(pd.DataFrame(tstats), f"spanning_tstats_{seg}")
+    premia = {seg: res["factors"].loc[a:b].drop(columns="RF").mean() * TRADING_DAYS
+              for seg, (a, b) in {"Full": (FIRST_TRADE, LAST_DAY), "Holdout": (HOLDOUT_START, LAST_DAY)}.items()}
+    save(pd.DataFrame(premia), "factor_premia")
 
     score = {}
     for seg, perf in {"Design": design, "Holdout": holdout, "Full": full}.items():
